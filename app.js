@@ -1,8 +1,8 @@
+// Import Firebase libraries
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 
-// Your web app's Firebase configuration
+// Your Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
   authDomain: "promote-pro-8f9aa.firebaseapp.com",
@@ -16,9 +16,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app);
 
-window.onload = function() {
+window.onload = async function() {
     if (window.Telegram && window.Telegram.WebApp) {
         const user = window.Telegram.WebApp.initDataUnsafe;
         const userId = user?.user?.id;
@@ -29,34 +28,34 @@ window.onload = function() {
         document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
         if (userId) {
-            // Fetch user data from Firestore
-            const userDoc = doc(db, "users", userId.toString());
-            getDoc(userDoc)
-                .then((docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        document.getElementById('points').textContent = data.points || 0;
-                        document.getElementById('tasksDone').textContent = data.tasksDone || 0;
+            try {
+                // Fetch user data from Firestore
+                const userDoc = doc(db, "users", userId.toString());
+                const docSnap = await getDoc(userDoc);
 
-                        // Mark completed tasks
-                        const completedTasks = data.completedTasks || [];
-                        document.querySelectorAll('.task').forEach(task => {
-                            if (completedTasks.includes(task.id)) {
-                                task.classList.add('completed');
-                                task.querySelector('.complete-btn').textContent = 'Completed';
-                            }
-                        });
-                    } else {
-                        console.error('No such document!');
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error fetching user data:', error);
-                });
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('points').textContent = data.points || 0;
+                    document.getElementById('tasksDone').textContent = data.tasksDone || 0;
+
+                    // Mark completed tasks
+                    const completedTasks = data.completedTasks || [];
+                    document.querySelectorAll('.task').forEach(task => {
+                        if (completedTasks.includes(task.id)) {
+                            task.classList.add('completed');
+                            task.querySelector('.complete-btn').textContent = 'Completed';
+                        }
+                    });
+                } else {
+                    console.log("No such document!");
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
 
             // Handle task completion
             document.querySelectorAll('.complete-btn').forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', async function() {
                     const taskId = this.getAttribute('data-task');
                     const taskElement = document.getElementById(taskId);
                     let points = parseInt(document.getElementById('points').textContent);
@@ -72,20 +71,15 @@ window.onload = function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
-                        // Send updated data to Firestore
-                        const updatedData = {
+                        // Update Firestore with the new data
+                        const userDoc = doc(db, "users", userId.toString());
+                        await setDoc(userDoc, {
                             points,
                             tasksDone,
                             completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
-                        };
-                        
-                        setDoc(userDoc, updatedData, { merge: true })
-                            .then(() => {
-                                console.log('Data successfully sent to Firestore');
-                            })
-                            .catch((error) => {
-                                console.error('Error sending data to Firestore:', error);
-                            });
+                        }, { merge: true });
+
+                        console.log('Data successfully sent to Firestore');
                     }
                 });
             });
