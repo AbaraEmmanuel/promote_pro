@@ -72,14 +72,17 @@ window.onload = async function() {
                         document.getElementById('tasksDone').textContent = tasksDone;
 
                         // Update Firestore with the new data
-                        const userDoc = doc(db, "users", userId.toString());
-                        await setDoc(userDoc, {
-                            points,
-                            tasksDone,
-                            completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
-                        }, { merge: true });
+                        try {
+                            await setDoc(doc(db, "users", userId.toString()), {
+                                points,
+                                tasksDone,
+                                completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
+                            }, { merge: true });
 
-                        console.log('Data successfully sent to Firestore');
+                            console.log('Data successfully sent to Firestore');
+                        } catch (error) {
+                            console.error('Error updating data in Firestore:', error);
+                        }
                     }
                 });
             });
