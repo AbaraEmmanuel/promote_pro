@@ -32,6 +32,7 @@ window.onload = async function() {
                 const docSnap = await getDoc(userRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    console.log("Fetched data:", data); // Debugging line
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasksDone || 0;
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const admin = require('firebase-admin');
+const cors = require('cors');
 const serviceAccount = require('./config/firebase-service-account-key.json');
 
 // Initialize Firebase Admin SDK
@@ -13,7 +14,9 @@ const db = admin.firestore();
 const app = express();
 const port = 3000;
 
+// Middleware
 app.use(bodyParser.json());
+app.use(cors()); // Enable CORS for all routes
 
 // Fetch user data from Firestore
 app.get('/data/:userId', async (req, res) => {
