@@ -1,4 +1,23 @@
-window.onload = function() {
+// Import Firebase modules
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+
+// Your Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
+  authDomain: "promote-pro-8f9aa.firebaseapp.com",
+  projectId: "promote-pro-8f9aa",
+  storageBucket: "promote-pro-8f9aa.appspot.com",
+  messagingSenderId: "553030063178",
+  appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
+  measurementId: "G-KZ89FN869W"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.onload = async function() {
     if (window.Telegram && window.Telegram.WebApp) {
         const user = window.Telegram.WebApp.initDataUnsafe;
         const userId = user?.user?.id;
@@ -9,31 +28,39 @@ window.onload = function() {
         document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
         if (userId) {
-            // Fetch user data
-            fetch(`https://promote-pro.vercel.app/data/${userId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data) {
-                        document.getElementById('points').textContent = data.points || 0;
-                        document.getElementById('tasksDone').textContent = data.tasksDone || 0;
+            // Fetch user data from Firestore
+            try {
+                const userDocRef = doc(db, "users", userId.toString());
+                const docSnap = await getDoc(userDocRef);
 
-                        // Mark completed tasks
-                        const completedTasks = data.completedTasks || [];
-                        document.querySelectorAll('.task').forEach(task => {
-                            if (completedTasks.includes(task.id)) {
-                                task.classList.add('completed');
-                                task.querySelector('.complete-btn').textContent = 'Completed';
-                            }
-                        });
-                    } else {
-                        console.error('No data found for the user');
-                    }
-                })
-                .catch(error => console.error('Error fetching user data:', error));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('points').textContent = data.points || 0;
+                    document.getElementById('tasksDone').textContent = data.tasksDone || 0;
+
+                    // Mark completed tasks
+                    const completedTasks = data.completedTasks || [];
+                    document.querySelectorAll('.task').forEach(task => {
+                        if (completedTasks.includes(task.id)) {
+                            task.classList.add('completed');
+                            task.querySelector('.complete-btn').textContent = 'Completed';
+                        }
+                    });
+                } else {
+                    // Initialize user data if not exists
+                    await setDoc(userDocRef, {
+                        points: 0,
+                        tasksDone: 0,
+                        completedTasks: []
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
 
             // Handle task completion
             document.querySelectorAll('.complete-btn').forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', async function() {
                     const taskId = this.getAttribute('data-task');
                     const taskElement = document.getElementById(taskId);
                     let points = parseInt(document.getElementById('points').textContent);
@@ -49,20 +76,16 @@ window.onload = function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
-                        // Send updated data to backend
-                        fetch('https://promote-pro.vercel.app/update', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                userId,
+                        // Send updated data to Firestore
+                        try {
+                            await setDoc(userDocRef, {
                                 points,
                                 tasksDone,
                                 completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => console.log('Data successfully sent:', data))
-                        .catch(error => console.error('Error sending data:', error));
+                            }, { merge: true });
+                        } catch (error) {
+                            console.error('Error updating user data:', error);
+                        }
                     }
                 });
             });
