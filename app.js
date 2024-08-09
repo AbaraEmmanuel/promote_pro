@@ -20,7 +20,7 @@ window.onload = function() {
 
         // Fetch user-specific data from your server
         if (userId) {
-            fetch(`https://exquisitev2.urbanson.tech/data/${userId}`)
+            fetch(`https://promote-pro.vercel.app/data/${userId}`)
                 .then(response => response.json())
                 .then(data => {
                     const points = data.points || 0;
@@ -65,7 +65,7 @@ window.onload = function() {
 };
 
 function sendDataToServer(userId, points, tasksDone) {
-    fetch('https://exquisitev2.urbanson.tech/update', {
+    fetch('https://promote-pro.vercel.app/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, points, tasksDone })
