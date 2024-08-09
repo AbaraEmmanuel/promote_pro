@@ -1,44 +1,25 @@
-// Import Firebase modules
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-
-// Your Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
-    authDomain: "promote-pro-8f9aa.firebaseapp.com",
-    projectId: "promote-pro-8f9aa",
-    storageBucket: "promote-pro-8f9aa.appspot.com",
-    messagingSenderId: "553030063178",
-    appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
-    measurementId: "G-KZ89FN869W"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.onload = async function() {
-    console.log('Page loaded');
+window.onload = function() {
     if (window.Telegram && window.Telegram.WebApp) {
         const user = window.Telegram.WebApp.initDataUnsafe;
+        console.log('User Data:', user); // Check if user data is available
+
         const userId = user?.user?.id;
         const firstName = user?.user?.first_name || "";
         const lastName = user?.user?.last_name || "";
 
-        console.log('User Data:', user);
-        console.log('User ID:', userId);
+        console.log('User ID:', userId); // Log User ID
+        console.log('First Name:', firstName); // Log First Name
+        console.log('Last Name:', lastName); // Log Last Name
 
+        // Display the username
         document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
         if (userId) {
-            try {
-                // Fetch user data from Firestore
-                console.log('Fetching user data...');
-                const userDoc = doc(db, "users", userId.toString());
-                const docSnap = await getDoc(userDoc);
-
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
+            // Fetch user data
+            fetch(`https://promote-pro.vercel.app/data/${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Fetched User Data:', data); // Log fetched data
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasksDone || 0;
 
@@ -50,16 +31,12 @@ window.onload = async function() {
                             task.querySelector('.complete-btn').textContent = 'Completed';
                         }
                     });
-                } else {
-                    console.log("No such document!");
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            }
+                })
+                .catch(error => console.error('Error fetching user data:', error));
 
             // Handle task completion
             document.querySelectorAll('.complete-btn').forEach(button => {
-                button.addEventListener('click', async function() {
+                button.addEventListener('click', function() {
                     const taskId = this.getAttribute('data-task');
                     const taskElement = document.getElementById(taskId);
                     let points = parseInt(document.getElementById('points').textContent);
@@ -75,17 +52,21 @@ window.onload = async function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
-                        // Update Firestore with the new data
-                        try {
-                            await setDoc(doc(db, "users", userId.toString()), {
-                                points,
-                                tasksDone,
-                                completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
-                            }, { merge: true });
-
-                            console.log('Data successfully sent to Firestore');
-                        } catch (error) {
-                            console.error('Error updating data in Firestore:', error);
+                        // Send updated data to backend
+                        if (userId) {
+                            fetch('https://promote-pro.vercel.app/update', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    userId,
+                                    points,
+                                    tasksDone,
+                                    completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => console.log('Data successfully sent:', data))
+                            .catch(error => console.error('Error sending data:', error));
                         }
                     }
                 });
@@ -95,4 +76,3 @@ window.onload = async function() {
         console.error('Telegram WebApp is not available');
     }
 };
-
