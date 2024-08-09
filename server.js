@@ -1,41 +1,26 @@
 const express = require('express');
-const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
 
-app.use(express.json());
+// Dummy in-memory database (use a real database in production)
+const userData = {};
 
-// Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/telegramApp', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
+app.use(bodyParser.json());
+
+app.get('/data/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const data = userData[userId] || { points: 0, tasksDone: 0, completedTasks: [] };
+    res.json(data);
 });
 
-// Define a schema and model for user data
-const userSchema = new mongoose.Schema({
-    userId: Number,
-    points: { type: Number, default: 0 },
-    tasksDone: { type: Number, default: 0 },
-    completedTasks: [String] // Store completed task IDs
-});
-
-const User = mongoose.model('User', userSchema);
-
-// Fetch user data
-app.get('/data/:userId', async (req, res) => {
-    const userId = parseInt(req.params.userId, 10);
-    const user = await User.findOne({ userId });
-    res.json(user || { points: 0, tasksDone: 0, completedTasks: [] });
-});
-
-// Update user data
-app.post('/update', async (req, res) => {
+app.post('/update', (req, res) => {
     const { userId, points, tasksDone, completedTasks } = req.body;
-    await User.findOneAndUpdate(
-        { userId },
-        { points, tasksDone, completedTasks },
-        { upsert: true }
-    );
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    userData[userId] = { points, tasksDone, completedTasks };
     res.json({ success: true });
 });
 
