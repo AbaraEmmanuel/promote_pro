@@ -1,21 +1,22 @@
 window.onload = function() {
     if (window.Telegram && window.Telegram.WebApp) {
         const user = window.Telegram.WebApp.initDataUnsafe;
-
         const userId = user?.user?.id;
-        const username = user?.user?.username || "Username";
         const firstName = user?.user?.first_name || "";
         const lastName = user?.user?.last_name || "";
 
-        // Display the username in the original format
+        // Display the username
         document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
         if (userId) {
+            // Fetch user data
             fetch(`https://promote-pro.vercel.app/data/${userId}`)
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasksDone || 0;
+
+                    // Mark completed tasks
                     const completedTasks = data.completedTasks || [];
                     document.querySelectorAll('.task').forEach(task => {
                         if (completedTasks.includes(task.id)) {
@@ -26,31 +27,34 @@ window.onload = function() {
                 })
                 .catch(error => console.error('Error fetching user data:', error));
 
+            // Handle task completion
             document.querySelectorAll('.complete-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const taskId = this.getAttribute('data-task');
                     const taskElement = document.getElementById(taskId);
-                    const points = parseInt(document.getElementById('points').textContent);
-                    const tasksDone = parseInt(document.getElementById('tasksDone').textContent);
+                    let points = parseInt(document.getElementById('points').textContent);
+                    let tasksDone = parseInt(document.getElementById('tasksDone').textContent);
 
                     if (!taskElement.classList.contains('completed')) {
                         taskElement.classList.add('completed');
                         this.textContent = 'Completed';
 
-                        // Update points and tasks done
-                        document.getElementById('points').textContent = points + 10;
-                        document.getElementById('tasksDone').textContent = tasksDone + 1;
+                        points += 10;
+                        tasksDone += 1;
 
-                        // Save changes to backend
+                        document.getElementById('points').textContent = points;
+                        document.getElementById('tasksDone').textContent = tasksDone;
+
+                        // Send updated data to backend
                         if (userId) {
                             fetch('https://promote-pro.vercel.app/update', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     userId,
-                                    points: points + 10,
-                                    tasksDone: tasksDone + 1,
-                                    completedTasks: [...completedTasks, taskId]
+                                    points,
+                                    tasksDone,
+                                    completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
                                 })
                             })
                             .then(response => response.json())
