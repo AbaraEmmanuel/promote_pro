@@ -95,3 +95,4 @@ window.onload = async function() {
         console.error('Telegram WebApp is not available');
     }
 };
+
