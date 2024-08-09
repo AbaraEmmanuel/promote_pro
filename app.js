@@ -4,8 +4,11 @@ window.onload = function() {
 
         const userId = user?.user?.id;
         const username = user?.user?.username || "Username";
+        const firstName = user?.user?.first_name || "";
+        const lastName = user?.user?.last_name || "";
 
-        document.getElementById('userName').textContent = username;
+        // Display the username in the original format
+        document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
         if (userId) {
             fetch(`https://promote-pro.vercel.app/data/${userId}`)
