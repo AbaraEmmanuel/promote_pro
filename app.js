@@ -1,22 +1,3 @@
-// Import Firebase modules
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-
-// Your Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
-  authDomain: "promote-pro-8f9aa.firebaseapp.com",
-  projectId: "promote-pro-8f9aa",
-  storageBucket: "promote-pro-8f9aa.appspot.com",
-  messagingSenderId: "553030063178",
-  appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
-  measurementId: "G-KZ89FN869W"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
 window.onload = async function() {
     if (window.Telegram && window.Telegram.WebApp) {
         const user = window.Telegram.WebApp.initDataUnsafe;
@@ -25,25 +6,19 @@ window.onload = async function() {
         const lastName = user?.user?.last_name || "";
 
         // Display the username
-        const userNameElement = document.getElementById('userName');
-        if (userNameElement) {
-            userNameElement.textContent = `${firstName} ${lastName}`;
-        } else {
-            console.error('Username element not found');
-        }
+        document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
         if (userId) {
-            const userDocRef = doc(db, "users", userId.toString());
             try {
-                const docSnap = await getDoc(userDocRef);
+                // Fetch user data from serverless function
+                const response = await fetch(`/api/getUserData?userId=${userId}`);
+                const data = await response.json();
 
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    console.log('Fetched user data:', data); // Debug log
-
+                if (response.ok) {
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasksDone || 0;
 
+                    // Mark completed tasks
                     const completedTasks = data.completedTasks || [];
                     document.querySelectorAll('.task').forEach(task => {
                         if (completedTasks.includes(task.id)) {
@@ -52,12 +27,18 @@ window.onload = async function() {
                         }
                     });
                 } else {
-                    console.log('No user data found, initializing user data');
-                    // Initialize user data if it does not exist
-                    await setDoc(userDocRef, {
-                        points: 0,
-                        tasksDone: 0,
-                        completedTasks: []
+                    // Initialize user data if not exists
+                    await fetch('/api/updateUserData', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            userId,
+                            points: 0,
+                            tasksDone: 0,
+                            completedTasks: []
+                        })
                     });
                 }
             } catch (error) {
@@ -82,20 +63,26 @@ window.onload = async function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
+                        // Send updated data to serverless function
                         try {
-                            await setDoc(userDocRef, {
-                                points,
-                                tasksDone,
-                                completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
-                            }, { merge: true });
+                            await fetch('/api/updateUserData', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    userId,
+                                    points,
+                                    tasksDone,
+                                    completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
+                                })
+                            });
                         } catch (error) {
                             console.error('Error updating user data:', error);
                         }
                     }
                 });
             });
-        } else {
-            console.error('User ID is missing');
         }
     } else {
         console.error('Telegram WebApp is not available');
