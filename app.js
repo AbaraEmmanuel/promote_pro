@@ -10,16 +10,16 @@ window.onload = async function() {
 
         if (userId) {
             try {
-                // Fetch user data from serverless function
-                const response = await fetch(`/api/getUserData?userId=${userId}`);
+                // Fetch user data from the server
+                const response = await fetch(`/data/${userId}`);
                 const data = await response.json();
 
                 if (response.ok) {
                     document.getElementById('points').textContent = data.points || 0;
-                    document.getElementById('tasksDone').textContent = data.tasksDone || 0;
+                    document.getElementById('tasksDone').textContent = data.tasks_done || 0;
 
                     // Mark completed tasks
-                    const completedTasks = data.completedTasks || [];
+                    const completedTasks = data.completed_tasks || [];
                     document.querySelectorAll('.task').forEach(task => {
                         if (completedTasks.includes(task.id)) {
                             task.classList.add('completed');
@@ -27,8 +27,8 @@ window.onload = async function() {
                         }
                     });
                 } else {
-                    // Initialize user data if not exists
-                    await fetch('/api/updateUserData', {
+                    // If user data doesn't exist, initialize it
+                    await fetch('/update', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -63,9 +63,11 @@ window.onload = async function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
-                        // Send updated data to serverless function
+                        // Send updated data to the server
                         try {
-                            await fetch('/api/updateUserData', {
+                            const completedTasks = Array.from(document.querySelectorAll('.task.completed')).map(task => task.id);
+
+                            await fetch('/update', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -74,7 +76,7 @@ window.onload = async function() {
                                     userId,
                                     points,
                                     tasksDone,
-                                    completedTasks: [...(document.querySelectorAll('.task.completed').map(task => task.id))]
+                                    completedTasks
                                 })
                             });
                         } catch (error) {

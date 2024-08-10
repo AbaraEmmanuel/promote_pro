@@ -1,8 +1,7 @@
-const db = require('./db');  // Import your db.js
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const db = require('./db');  // Import your db.js
 
 const app = express();
 const port = 3000;
