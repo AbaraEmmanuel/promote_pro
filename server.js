@@ -1,16 +1,10 @@
+// server.js
+
 const express = require('express');
 const bodyParser = require('body-parser');
-const admin = require('firebase-admin');
 const cors = require('cors');
-const serviceAccount = require('./config/firebase-service-account-key.json');
+const db = require('./db'); // Import the db connection
 
-// Initialize Firebase Admin SDK
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://promote-pro-8f9aa.firebaseio.com"  // Replace with your database URL
-});
-
-const db = admin.firestore();
 const app = express();
 const port = 3000;
 
@@ -18,23 +12,22 @@ const port = 3000;
 app.use(bodyParser.json());
 app.use(cors()); // Enable CORS for all routes
 
-// Fetch user data from Firestore
+// Fetch user data from PostgreSQL
 app.get('/data/:userId', async (req, res) => {
   const userId = req.params.userId;
   try {
-    const userDoc = db.collection('users').doc(userId);
-    const doc = await userDoc.get();
-    if (!doc.exists) {
+    const result = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json(doc.data());
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching user data:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Update user data in Firestore
+// Update user data in PostgreSQL
 app.post('/update', async (req, res) => {
   const { userId, points, tasksDone, completedTasks } = req.body;
   if (!userId) {
@@ -42,12 +35,10 @@ app.post('/update', async (req, res) => {
   }
 
   try {
-    const userDoc = db.collection('users').doc(userId);
-    await userDoc.set({
-      points,
-      tasksDone,
-      completedTasks
-    }, { merge: true }); // Merge updates with existing document
+    await db.query(
+      'INSERT INTO users (id, points, tasks_done, completed_tasks) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET points = $2, tasks_done = $3, completed_tasks = $4',
+      [userId, points, tasksDone, JSON.stringify(completedTasks)]
+    );
     res.json({ success: true });
   } catch (error) {
     console.error('Error updating user data:', error);
