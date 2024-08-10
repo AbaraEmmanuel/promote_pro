@@ -28,9 +28,8 @@ window.onload = async function() {
         document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
         if (userId) {
-            // Fetch user data from Firestore
+            const userDocRef = doc(db, "users", userId.toString());
             try {
-                const userDocRef = doc(db, "users", userId.toString());
                 const docSnap = await getDoc(userDocRef);
 
                 if (docSnap.exists()) {
@@ -38,7 +37,6 @@ window.onload = async function() {
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasksDone || 0;
 
-                    // Mark completed tasks
                     const completedTasks = data.completedTasks || [];
                     document.querySelectorAll('.task').forEach(task => {
                         if (completedTasks.includes(task.id)) {
@@ -47,7 +45,7 @@ window.onload = async function() {
                         }
                     });
                 } else {
-                    // Initialize user data if not exists
+                    // Initialize user data if it does not exist
                     await setDoc(userDocRef, {
                         points: 0,
                         tasksDone: 0,
@@ -76,7 +74,6 @@ window.onload = async function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
-                        // Send updated data to Firestore
                         try {
                             await setDoc(userDocRef, {
                                 points,
