@@ -25,7 +25,12 @@ window.onload = async function() {
         const lastName = user?.user?.last_name || "";
 
         // Display the username
-        document.getElementById('userName').textContent = `${firstName} ${lastName}`;
+        const userNameElement = document.getElementById('userName');
+        if (userNameElement) {
+            userNameElement.textContent = `${firstName} ${lastName}`;
+        } else {
+            console.error('Username element not found');
+        }
 
         if (userId) {
             const userDocRef = doc(db, "users", userId.toString());
@@ -34,6 +39,8 @@ window.onload = async function() {
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    console.log('Fetched user data:', data); // Debug log
+
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasksDone || 0;
 
@@ -45,6 +52,7 @@ window.onload = async function() {
                         }
                     });
                 } else {
+                    console.log('No user data found, initializing user data');
                     // Initialize user data if it does not exist
                     await setDoc(userDocRef, {
                         points: 0,
@@ -86,6 +94,8 @@ window.onload = async function() {
                     }
                 });
             });
+        } else {
+            console.error('User ID is missing');
         }
     } else {
         console.error('Telegram WebApp is not available');
