@@ -2,9 +2,9 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Make sure to set this in your environment variables
+  connectionString: process.env.DATABASE_URL,  // Ensure this environment variable is set in Vercel
   ssl: {
-    rejectUnauthorized: false
+    rejectUnauthorized: false  // Necessary for managed databases like Vercel's
   }
 });
 

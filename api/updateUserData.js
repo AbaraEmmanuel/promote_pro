@@ -1,13 +1,6 @@
-import { initializeApp, applicationDefault, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import serviceAccount from '../../config/firebase-service-account-key.json'; // Adjust the path as needed
+import db from '../../db';  // Adjust the import path as needed
 
-initializeApp({
-  credential: cert(serviceAccount),
-});
-
-const db = getFirestore();
-
+// Update user data in PostgreSQL
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -20,13 +13,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const userDoc = db.collection('users').doc(userId);
-    await userDoc.set({
-      points,
-      tasksDone,
-      completedTasks
-    }, { merge: true });
-
+    await db.query(
+      'INSERT INTO users (id, points, tasks_done, completed_tasks) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET points = $2, tasks_done = $3, completed_tasks = $4',
+      [userId, points, tasksDone, JSON.stringify(completedTasks)]
+    );
     res.status(200).json({ success: true });
   } catch (error) {
     console.error('Error updating user data:', error);

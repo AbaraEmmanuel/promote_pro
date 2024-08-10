@@ -1,9 +1,8 @@
-// server.js
+const db = require('./db');  // Import your db.js
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const db = require('./db'); // Import the db connection
 
 const app = express();
 const port = 3000;
@@ -47,5 +46,5 @@ app.post('/update', async (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
