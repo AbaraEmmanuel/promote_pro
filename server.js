@@ -1,7 +1,16 @@
 require('dotenv').config();
 const express = require('express');
-const { sql } = require('@vercel/postgres');
 const path = require('path');
+const admin = require('firebase-admin');
+
+// Initialize Firebase Admin with service account
+const serviceAccount = require('./config/serviceAccountKey.json');
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: 'https://promote-pro-8f9aa-default-rtdb.firebaseio.com/'
+});
+
+const db = admin.database();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,18 +24,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/data/:userId', async (req, res) => {
     const { userId } = req.params;
     try {
-        // Query to fetch user data from the database
-        const result = await sql`
-            SELECT points, tasks_done, completed_tasks FROM Users WHERE id = ${userId}
-        `;
-        if (result.rows.length > 0) {
-            res.json(result.rows[0]);
-        } else {
-            res.status(404).json({ message: 'User not found' });
-        }
+        // Fetch user data from Firebase Realtime Database
+        const userRef = db.ref(`users/${userId}`);
+        userRef.once('value', (snapshot) => {
+            if (snapshot.exists()) {
+                res.json(snapshot.val());
+            } else {
+                res.status(404).json({ message: 'User not found' });
+            }
+        });
     } catch (error) {
-        console.error('Database error:', error);
-        res.status(500).json({ error: 'Database error' });
+        console.error('Firebase error:', error);
+        res.status(500).json({ error: 'Firebase error' });
     }
 });
 
@@ -34,36 +43,17 @@ app.get('/data/:userId', async (req, res) => {
 app.post('/update', async (req, res) => {
     const { userId, points, tasksDone, completedTasks } = req.body;
     try {
-        // Query to insert or update user data in the database
-        await sql`
-            INSERT INTO Users (id, points, tasks_done, completed_tasks)
-            VALUES (${userId}, ${points}, ${tasksDone}, ${completedTasks})
-            ON CONFLICT (id) DO UPDATE
-            SET points = ${points}, tasks_done = ${tasksDone}, completed_tasks = ${completedTasks}
-        `;
+        // Update user data in Firebase Realtime Database
+        const userRef = db.ref(`users/${userId}`);
+        await userRef.set({
+            points,
+            tasks_done: tasksDone,
+            completed_tasks: completedTasks
+        });
         res.status(200).json({ message: 'User data updated' });
     } catch (error) {
-        console.error('Database error:', error);
-        res.status(500).json({ error: 'Database error' });
-    }
-});
-
-// Route to set up the database table
-app.get('/setup', async (req, res) => {
-    try {
-        // Query to create the Users table if it doesn't exist
-        await sql`
-            CREATE TABLE IF NOT EXISTS Users (
-                id VARCHAR(255) PRIMARY KEY,
-                points INTEGER DEFAULT 0,
-                tasks_done INTEGER DEFAULT 0,
-                completed_tasks JSONB DEFAULT '[]'::jsonb
-            );
-        `;
-        res.status(200).json({ message: 'Table created successfully' });
-    } catch (error) {
-        console.error('Database setup error:', error);
-        res.status(500).json({ error: 'Database setup error' });
+        console.error('Firebase error:', error);
+        res.status(500).json({ error: 'Firebase error' });
     }
 });
 
