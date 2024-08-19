@@ -7,7 +7,7 @@ const admin = require('firebase-admin');
 const serviceAccount = require('./config/serviceAccountKey.json');
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://promote-pro-8f9aa-default-rtdb.firebaseio.com/'
+    databaseURL: 'https://promote-pro-8f9aa-default-rtdb.firebaseio.com/' // Replace with your Firebase Realtime Database URL
 });
 
 const db = admin.database();
@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
 

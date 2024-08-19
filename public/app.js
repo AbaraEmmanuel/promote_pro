@@ -27,19 +27,8 @@ window.onload = async function() {
                         }
                     });
                 } else {
-                    // If user data doesn't exist, initialize it
-                    await fetch('/update', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            userId,
-                            points: 0,
-                            tasksDone: 0,
-                            completedTasks: []
-                        })
-                    });
+                    // Initialize user data if not found in the database
+                    await initializeUserData(userId);
                 }
             } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -64,24 +53,7 @@ window.onload = async function() {
                         document.getElementById('tasksDone').textContent = tasksDone;
 
                         // Send updated data to the server
-                        try {
-                            const completedTasks = Array.from(document.querySelectorAll('.task.completed')).map(task => task.id);
-
-                            await fetch('/update', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    userId,
-                                    points,
-                                    tasksDone,
-                                    completedTasks
-                                })
-                            });
-                        } catch (error) {
-                            console.error('Error updating user data:', error);
-                        }
+                        await updateUserData(userId, points, tasksDone);
                     }
                 });
             });
@@ -90,3 +62,45 @@ window.onload = async function() {
         console.error('Telegram WebApp is not available');
     }
 };
+
+// Function to initialize user data
+async function initializeUserData(userId) {
+    try {
+        await fetch('/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                points: 0,
+                tasksDone: 0,
+                completedTasks: []
+            })
+        });
+    } catch (error) {
+        console.error('Error initializing user data:', error);
+    }
+}
+
+// Function to update user data
+async function updateUserData(userId, points, tasksDone) {
+    try {
+        const completedTasks = Array.from(document.querySelectorAll('.task.completed')).map(task => task.id);
+
+        await fetch('/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                points,
+                tasksDone,
+                completedTasks
+            })
+        });
+    } catch (error) {
+        console.error('Error updating user data:', error);
+    }
+}
