@@ -22,17 +22,18 @@ const db = getDatabase(app);
 
 window.onload = async function () {
     if (window.Telegram && window.Telegram.WebApp) {
-        const user = window.Telegram.WebApp.initDataUnsafe;
-        const userId = user?.user?.id;
-        const firstName = user?.user?.first_name || "";
-        const lastName = user?.user?.last_name || "";
+        const user = window.Telegram.WebApp.initDataUnsafe.user;
+        const userId = user?.id;
+        const firstName = user?.first_name || "";
+        const lastName = user?.last_name || "";
+        const fullName = `${firstName} ${lastName}`.trim();
 
-        // Display the username
-        document.getElementById('userName').textContent = `${firstName} ${lastName}`;
+        // Display the Telegram user's name
+        document.getElementById('userName').textContent = fullName;
 
         if (userId) {
             try {
-                // Fetch user data from Firebase Realtime Database
+                // Fetch user data from Firebase Realtime Database using Telegram user ID
                 const userRef = ref(db, `users/${userId}`);
                 const snapshot = await get(userRef);
                 const data = snapshot.val();
@@ -41,7 +42,7 @@ window.onload = async function () {
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasksDone || 0;
 
-                    // Mark completed tasks
+                    // Mark completed tasks based on data from Firebase
                     const completedTasks = data.completedTasks || [];
                     document.querySelectorAll('.task').forEach(task => {
                         if (completedTasks.includes(task.id)) {
@@ -50,7 +51,7 @@ window.onload = async function () {
                         }
                     });
                 } else {
-                    // If user data doesn't exist, initialize it in Firebase
+                    // If no user data exists in Firebase, initialize it
                     await set(userRef, {
                         points: 0,
                         tasksDone: 0,
