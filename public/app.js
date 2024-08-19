@@ -21,15 +21,25 @@ const analytics = getAnalytics(app);
 const db = getDatabase(app);
 
 window.onload = async function () {
+    // Debug: Log if Telegram WebApp is initialized
     if (window.Telegram && window.Telegram.WebApp) {
+        console.log("Telegram WebApp initialized");
+        
         const user = window.Telegram.WebApp.initDataUnsafe.user;
+        console.log("User data from Telegram:", user);  // Debug: Log user data
+
         const userId = user?.id;
         const firstName = user?.first_name || "";
         const lastName = user?.last_name || "";
         const fullName = `${firstName} ${lastName}`.trim();
 
-        // Display the Telegram user's name
-        document.getElementById('userName').textContent = fullName;
+        // Ensure the element exists
+        const userNameElement = document.getElementById('userName');
+        if (userNameElement) {
+            userNameElement.textContent = fullName;
+        } else {
+            console.error('User name element not found');
+        }
 
         if (userId) {
             try {
@@ -37,6 +47,8 @@ window.onload = async function () {
                 const userRef = ref(db, `users/${userId}`);
                 const snapshot = await get(userRef);
                 const data = snapshot.val();
+
+                console.log("Firebase user data:", data);  // Debug: Log Firebase data
 
                 if (data) {
                     document.getElementById('points').textContent = data.points || 0;
