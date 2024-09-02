@@ -43,10 +43,11 @@ window.onload = async function() {
 
                     // Mark completed tasks
                     const completedTasks = data.completedTasks || [];
-                    document.querySelectorAll('.task').forEach(task => {
-                        if (completedTasks.includes(task.id)) {
-                            task.classList.add('completed');
-                            task.querySelector('.complete-btn').textContent = 'Completed';
+                    completedTasks.forEach(taskId => {
+                        const taskElement = document.getElementById(taskId);
+                        if (taskElement) {
+                            taskElement.classList.add('completed');
+                            taskElement.querySelector('.complete-btn').textContent = 'Completed';
                         }
                     });
                 } else {
