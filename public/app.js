@@ -20,15 +20,13 @@ window.onload = async function() {
 
                     // Mark completed tasks
                     const completedTasks = data.completed_tasks || [];
-                    completedTasks.forEach(taskId => {
-                        const taskElement = document.getElementById(taskId);
-                        if (taskElement) {
-                            taskElement.classList.add('completed');
-                            taskElement.querySelector('.complete-btn').textContent = 'Completed';
+                    document.querySelectorAll('.task').forEach(task => {
+                        if (completedTasks.includes(task.id)) {
+                            task.classList.add('completed');
+                            task.querySelector('.complete-btn').textContent = 'Completed';
                         }
                     });
                 } else {
-                    // Initialize user data if not found in the database
                     await initializeUserData(userId);
                 }
             } catch (error) {
@@ -53,7 +51,6 @@ window.onload = async function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
-                        // Send updated data to the server
                         await updateUserData(userId, points, tasksDone);
                     }
                 });
