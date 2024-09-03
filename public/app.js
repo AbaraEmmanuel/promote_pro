@@ -27,64 +27,59 @@ window.onload = async function() {
         const firstName = user?.user?.first_name || "";
         const lastName = user?.user?.last_name || "";
 
-        // Ensure the DOM is fully loaded
-        document.addEventListener("DOMContentLoaded", async function() {
-            // Display the username
-            document.getElementById('userName').textContent = `${firstName} ${lastName}`;
+        // Display the username
+        document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
-            if (userId) {
-                try {
-                    // Fetch user data from Firestore
-                    const docRef = doc(db, "userPoints", userId);
-                    const docSnap = await getDoc(docRef);
+        if (userId) {
+            try {
+                // Fetch user data from the server
+                const response = await fetch(`/data/${userId}`);
+                const data = await response.json();
 
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        document.getElementById('points').textContent = data.points || 0;
-                        document.getElementById('tasksDone').textContent = data.tasksDone || 0;
+                if (response.ok) {
+                    document.getElementById('points').textContent = data.points || 0;
+                    document.getElementById('tasksDone').textContent = data.tasks_done || 0;
 
-                        // Mark completed tasks
-                        const completedTasks = data.completedTasks || [];
-                        completedTasks.forEach(taskId => {
-                            const taskElement = document.getElementById(taskId);
-                            if (taskElement) {
-                                taskElement.classList.add('completed');
-                                taskElement.querySelector('.complete-btn').textContent = 'Completed';
-                            }
-                        });
-                    } else {
-                        // Initialize user data if not found in Firestore
-                        await initializeUserData(userId);
-                    }
-                } catch (error) {
-                    console.error('Error fetching user data:', error);
-                }
-
-                // Handle task completion
-                document.querySelectorAll('.complete-btn').forEach(button => {
-                    button.addEventListener('click', async function() {
-                        const taskId = this.getAttribute('data-task');
-                        const taskElement = document.getElementById(taskId);
-                        let points = parseInt(document.getElementById('points').textContent);
-                        let tasksDone = parseInt(document.getElementById('tasksDone').textContent);
-
-                        if (!taskElement.classList.contains('completed')) {
-                            taskElement.classList.add('completed');
-                            this.textContent = 'Completed';
-
-                            points += 10;
-                            tasksDone += 1;
-
-                            document.getElementById('points').textContent = points;
-                            document.getElementById('tasksDone').textContent = tasksDone;
-
-                            // Update user data in Firestore
-                            await updateUserData(userId, points, tasksDone);
+                    // Mark completed tasks
+                    const completedTasks = data.completed_tasks || [];
+                    document.querySelectorAll('.task').forEach(task => {
+                        if (completedTasks.includes(task.id)) {
+                            task.classList.add('completed');
+                            task.querySelector('.complete-btn').textContent = 'Completed';
                         }
                     });
-                });
+                } else {
+                    // Initialize user data if not found in Firestore
+                    await initializeUserData(userId);
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
             }
-        });
+
+            // Handle task completion
+            document.querySelectorAll('.complete-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const taskId = this.getAttribute('data-task');
+                    const taskElement = document.getElementById(taskId);
+                    let points = parseInt(document.getElementById('points').textContent);
+                    let tasksDone = parseInt(document.getElementById('tasksDone').textContent);
+
+                    if (!taskElement.classList.contains('completed')) {
+                        taskElement.classList.add('completed');
+                        this.textContent = 'Completed';
+
+                        points += 10;
+                        tasksDone += 1;
+
+                        document.getElementById('points').textContent = points;
+                        document.getElementById('tasksDone').textContent = tasksDone;
+
+                        // Update user data in Firestore
+                        await updateUserData(userId, points, tasksDone);
+                    }
+                });
+            });
+        }
     } else {
         console.error('Telegram WebApp is not available');
     }
@@ -96,8 +91,8 @@ async function initializeUserData(userId) {
         const docRef = doc(db, "userPoints", userId);
         await setDoc(docRef, {
             points: 0,
-            tasksDone: 0,
-            completedTasks: []
+            tasks_done: 0,
+            completed_tasks: []
         });
     } catch (error) {
         console.error('Error initializing user data:', error);
@@ -112,8 +107,8 @@ async function updateUserData(userId, points, tasksDone) {
 
         await setDoc(docRef, {
             points: points,
-            tasksDone: tasksDone,
-            completedTasks: completedTasks
+            tasks_done: tasksDone,
+            completed_tasks: completedTasks
         });
     } catch (error) {
         console.error('Error updating user data:', error);
