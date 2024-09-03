@@ -1,25 +1,3 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
-  authDomain: "promote-pro-8f9aa.firebaseapp.com",
-  databaseURL: "https://promote-pro-8f9aa-default-rtdb.firebaseio.com",
-  projectId: "promote-pro-8f9aa",
-  storageBucket: "promote-pro-8f9aa.appspot.com",
-  messagingSenderId: "553030063178",
-  appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
-  measurementId: "G-KZ89FN869W"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
-
 window.onload = async function() {
     if (window.Telegram && window.Telegram.WebApp) {
         const user = window.Telegram.WebApp.initDataUnsafe;
@@ -42,14 +20,15 @@ window.onload = async function() {
 
                     // Mark completed tasks
                     const completedTasks = data.completed_tasks || [];
-                    document.querySelectorAll('.task').forEach(task => {
-                        if (completedTasks.includes(task.id)) {
-                            task.classList.add('completed');
-                            task.querySelector('.complete-btn').textContent = 'Completed';
+                    completedTasks.forEach(taskId => {
+                        const taskElement = document.getElementById(taskId);
+                        if (taskElement) {
+                            taskElement.classList.add('completed');
+                            taskElement.querySelector('.complete-btn').textContent = 'Completed';
                         }
                     });
                 } else {
-                    // Initialize user data if not found in Firestore
+                    // Initialize user data if not found in the database
                     await initializeUserData(userId);
                 }
             } catch (error) {
@@ -74,7 +53,7 @@ window.onload = async function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
-                        // Update user data in Firestore
+                        // Send updated data to the server
                         await updateUserData(userId, points, tasksDone);
                     }
                 });
@@ -88,11 +67,17 @@ window.onload = async function() {
 // Function to initialize user data
 async function initializeUserData(userId) {
     try {
-        const docRef = doc(db, "userPoints", userId);
-        await setDoc(docRef, {
-            points: 0,
-            tasks_done: 0,
-            completed_tasks: []
+        await fetch('/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                points: 0,
+                tasksDone: 0,
+                completedTasks: []
+            })
         });
     } catch (error) {
         console.error('Error initializing user data:', error);
@@ -103,12 +88,18 @@ async function initializeUserData(userId) {
 async function updateUserData(userId, points, tasksDone) {
     try {
         const completedTasks = Array.from(document.querySelectorAll('.task.completed')).map(task => task.id);
-        const docRef = doc(db, "userPoints", userId);
 
-        await setDoc(docRef, {
-            points: points,
-            tasks_done: tasksDone,
-            completed_tasks: completedTasks
+        await fetch('/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                points,
+                tasksDone,
+                completedTasks
+            })
         });
     } catch (error) {
         console.error('Error updating user data:', error);
