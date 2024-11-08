@@ -3,14 +3,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.x/firebase-a
 import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.x/firebase-firestore.js";
 
 // Firebase configuration (replace with your actual config from Firebase Console)
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
+    apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
+    authDomain: "promote-pro-8f9aa.firebaseapp.com",
+    databaseURL: "https://promote-pro-8f9aa-default-rtdb.firebaseio.com",
+    projectId: "promote-pro-8f9aa",
+    storageBucket: "promote-pro-8f9aa.firebasestorage.app",
+    messagingSenderId: "553030063178",
+    appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
+    measurementId: "G-KZ89FN869W"
+  };
 
 // Initialize Firebase and Firestore
 const app = initializeApp(firebaseConfig);
@@ -47,7 +50,7 @@ window.onload = async function() {
                 } else {
                     // Initialize new user data
                     await setDoc(userRef, {
-                        username: username,
+                        username: firstName,
                         points: 0,
                         tasks_done: 0,
                         completed_tasks: []
