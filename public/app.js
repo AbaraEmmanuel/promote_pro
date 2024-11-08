@@ -5,16 +5,16 @@ window.onload = async function() {
         const firstName = user?.user?.first_name || "";
         const lastName = user?.user?.last_name || "";
 
+        // Display the username
         document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
         if (userId) {
             try {
-                // Check if user exists in Firestore
-                const userRef = doc(db, "users", userId);
-                const userDoc = await getDoc(userRef);
+                // Fetch user data from the server
+                const response = await fetch(`/data/${userId}`);
+                const data = await response.json();
 
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
+                if (response.ok) {
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasks_done || 0;
 
@@ -27,24 +27,10 @@ window.onload = async function() {
                         }
                     });
                 } else {
-                    // Initialize new user data
-                    await setDoc(userRef, {
-                        username: firstName,
-                        points: 0,
-                        tasks_done: 0,
-                        completed_tasks: []
-                    });
+                    await initializeUserData(userId);
                 }
-
-                // Handle task submission button
-                document.getElementById('submitTask').addEventListener('click', async function() {
-                    // Submit link to Firestore
-                    const link = document.getElementById('taskLink').value;
-                    await updateDoc(userRef, { link: link, status: "On review" });
-                    this.textContent = "On review";
-                });
             } catch (error) {
-                console.error('Error initializing Firestore user data:', error);
+                console.error('Error fetching user data:', error);
             }
 
             // Handle task completion
@@ -65,12 +51,7 @@ window.onload = async function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
-                        // Update Firestore with new points and task status
-                        await updateDoc(userRef, {
-                            points: points,
-                            tasks_done: tasksDone,
-                            completed_tasks: [...(data.completed_tasks || []), taskId]
-                        });
+                        await updateUserData(userId, points, tasksDone);
                     }
                 });
             });
@@ -79,23 +60,45 @@ window.onload = async function() {
         console.error('Telegram WebApp is not available');
     }
 };
-// Import Firebase libraries
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.x/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.x/firebase-firestore.js";
 
-// Firebase configuration (replace with your actual config from Firebase Console)
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-    apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
-    authDomain: "promote-pro-8f9aa.firebaseapp.com",
-    databaseURL: "https://promote-pro-8f9aa-default-rtdb.firebaseio.com",
-    projectId: "promote-pro-8f9aa",
-    storageBucket: "promote-pro-8f9aa.firebasestorage.app",
-    messagingSenderId: "553030063178",
-    appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
-    measurementId: "G-KZ89FN869W"
-  };
+// Function to initialize user data
+async function initializeUserData(userId) {
+    try {
+        await fetch('/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                points: 0,
+                tasksDone: 0,
+                completedTasks: []
+            })
+        });
+    } catch (error) {
+        console.error('Error initializing user data:', error);
+    }
+}
 
-// Initialize Firebase and Firestore
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Function to update user data
+async function updateUserData(userId, points, tasksDone) {
+    try {
+        const completedTasks = Array.from(document.querySelectorAll('.task.completed')).map(task => task.id);
+
+        await fetch('/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                points,
+                tasksDone,
+                completedTasks
+            })
+        });
+    } catch (error) {
+        console.error('Error updating user data:', error);
+    }
+}
