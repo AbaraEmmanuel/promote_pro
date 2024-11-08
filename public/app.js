@@ -5,16 +5,16 @@ window.onload = async function() {
         const firstName = user?.user?.first_name || "";
         const lastName = user?.user?.last_name || "";
 
-        // Display the username
-        document.getElementById('userName').textContent = `${firstName} ${lastName}`;
+        document.getElementById('userName').textContent = `${firstName} ${lastName}` || "Guest";
 
         if (userId) {
             try {
-                // Fetch user data from the server
-                const response = await fetch(`/data/${userId}`);
-                const data = await response.json();
+                // Check if user exists in Firestore
+                const userRef = doc(db, "users", userId);
+                const userDoc = await getDoc(userRef);
 
-                if (response.ok) {
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasks_done || 0;
 
@@ -27,10 +27,24 @@ window.onload = async function() {
                         }
                     });
                 } else {
-                    await initializeUserData(userId);
+                    // Initialize new user data
+                    await setDoc(userRef, {
+                        username: firstName,
+                        points: 0,
+                        tasks_done: 0,
+                        completed_tasks: []
+                    });
                 }
+
+                // Handle task submission button
+                document.getElementById('submitTask').addEventListener('click', async function() {
+                    // Submit link to Firestore
+                    const link = document.getElementById('taskLink').value;
+                    await updateDoc(userRef, { link: link, status: "On review" });
+                    this.textContent = "On review";
+                });
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.error('Error initializing Firestore user data:', error);
             }
 
             // Handle task completion
@@ -51,7 +65,12 @@ window.onload = async function() {
                         document.getElementById('points').textContent = points;
                         document.getElementById('tasksDone').textContent = tasksDone;
 
-                        await updateUserData(userId, points, tasksDone);
+                        // Update Firestore with new points and task status
+                        await updateDoc(userRef, {
+                            points: points,
+                            tasks_done: tasksDone,
+                            completed_tasks: [...(data.completed_tasks || []), taskId]
+                        });
                     }
                 });
             });
@@ -60,19 +79,3 @@ window.onload = async function() {
         console.error('Telegram WebApp is not available');
     }
 };
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.x/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.x/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
-    authDomain: "promote-pro-8f9aa.firebaseapp.com",
-    databaseURL: "https://promote-pro-8f9aa-default-rtdb.firebaseio.com",
-    projectId: "promote-pro-8f9aa",
-    storageBucket: "promote-pro-8f9aa.firebasestorage.app",
-    messagingSenderId: "553030063178",
-    appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
-    measurementId: "G-KZ89FN869W"
-  };
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app)
