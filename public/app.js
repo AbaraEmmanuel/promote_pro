@@ -26,7 +26,7 @@ window.onload = async function() {
         const firstName = user?.user?.first_name || "";
         const lastName = user?.user?.last_name || "";
 
-        document.getElementById('userName').textContent = `${firstName} ${lastName}` || "Guest";
+        document.getElementById('userName').textContent = `${firstName} ${lastName}`;
 
         if (userId) {
             try {
