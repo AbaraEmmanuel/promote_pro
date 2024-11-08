@@ -1,23 +1,17 @@
-// Import Firebase modules
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.x/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.x/firebase-firestore.js";
 
-// Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
     authDomain: "promote-pro-8f9aa.firebaseapp.com",
     databaseURL: "https://promote-pro-8f9aa-default-rtdb.firebaseio.com",
     projectId: "promote-pro-8f9aa",
-    storageBucket: "promote-pro-8f9aa.appspot.com",
+    storageBucket: "promote-pro-8f9aa.firebasestorage.app",
     messagingSenderId: "553030063178",
     appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
     measurementId: "G-KZ89FN869W"
-};
-
-// Initialize Firebase and Firestore
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
+  };
+  
 window.onload = async function() {
     if (window.Telegram && window.Telegram.WebApp) {
         const user = window.Telegram.WebApp.initDataUnsafe;
@@ -25,17 +19,15 @@ window.onload = async function() {
         const firstName = user?.user?.first_name || "";
         const lastName = user?.user?.last_name || "";
 
-        // Display the username
         document.getElementById('userName').textContent = `${firstName} ${lastName}` || "Guest";
 
         if (userId) {
             try {
-                // Reference to the user's Firestore document
+                // Check if user exists in Firestore
                 const userRef = doc(db, "users", userId);
                 const userDoc = await getDoc(userRef);
 
                 if (userDoc.exists()) {
-                    // If the user exists, display data from Firestore
                     const data = userDoc.data();
                     document.getElementById('points').textContent = data.points || 0;
                     document.getElementById('tasksDone').textContent = data.tasks_done || 0;
@@ -49,17 +41,18 @@ window.onload = async function() {
                         }
                     });
                 } else {
-                    // Initialize new user in Firestore
+                    // Initialize new user data
                     await setDoc(userRef, {
-                        username: `${firstName} ${lastName}`,
+                        username: firstName,
                         points: 0,
                         tasks_done: 0,
                         completed_tasks: []
                     });
                 }
 
-                // Handle task submission
+                // Handle task submission button
                 document.getElementById('submitTask').addEventListener('click', async function() {
+                    // Submit link to Firestore
                     const link = document.getElementById('taskLink').value;
                     await updateDoc(userRef, { link: link, status: "On review" });
                     this.textContent = "On review";
@@ -90,7 +83,7 @@ window.onload = async function() {
                         await updateDoc(userRef, {
                             points: points,
                             tasks_done: tasksDone,
-                            completed_tasks: [...(userDoc.data().completed_tasks || []), taskId]
+                            completed_tasks: [...(data.completed_tasks || []), taskId]
                         });
                     }
                 });
