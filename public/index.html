@@ -6,13 +6,30 @@
     <title>Telegram Dashboard</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Include Telegram Web Apps SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.x/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x/firebase-firestore.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyD4DVbIQUzhNSczujsP27MwTE6NfifB8ew",
+          authDomain: "promote-pro-8f9aa.firebaseapp.com",
+          databaseURL: "https://promote-pro-8f9aa-default-rtdb.firebaseio.com",
+          projectId: "promote-pro-8f9aa",
+          storageBucket: "promote-pro-8f9aa.firebasestorage.app",
+          messagingSenderId: "553030063178",
+          appId: "1:553030063178:web:13e2b89fd5c6c628ccc2b3",
+          measurementId: "G-KZ89FN869W"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Welcome to your Dashboard!</h1>
             <div id="userName" class="username">Username</div>
+            <img id="profilePic" class="profile-pic" src="" alt="Profile Picture">
         </header>
         <main>
             <div class="stats">
@@ -22,8 +39,10 @@
             <div class="tasks">
                 <h2>Available Tasks</h2>
                 <div class="task" id="task1">
-                    <span>Task 1</span>
-                    <button class="complete-btn" data-task="task1">Complete</button>
+                    <span>Task 1: Comment on Twitter Post</span>
+                    <input type="text" placeholder="Paste link here" id="taskLink1">
+                    <button class="submit-btn" data-task="task1">Submit</button>
+                    <span class="task-status" id="status1">Pending</span>
                 </div>
                 <div class="task" id="task2">
                     <span>Task 2</span>
